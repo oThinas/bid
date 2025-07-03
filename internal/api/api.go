@@ -1,7 +1,11 @@
 package api
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/go-chi/chi/v5"
+	"github.com/oThinas/bid/internal/services"
+)
 
 type Api struct {
-	router *chi.Mux
+	Router      *chi.Mux
+	UserService services.UserService
 }
