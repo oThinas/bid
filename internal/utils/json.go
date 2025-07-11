@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/oThinas/bid/internal/validator"
 )
@@ -27,7 +28,25 @@ func EncodeJSON[T any](w http.ResponseWriter, r *http.Request, statusCode int, d
 func DecodeJSON[T validator.Validator](r *http.Request) (T, validator.Evaluator, error) {
 	var data T
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		return data, nil, fmt.Errorf("failed to decode JSON request body: %w", err)
+		// Provide more specific error messages for common JSON parsing issues
+		var problems validator.Evaluator
+
+		if jsonErr, ok := err.(*json.UnmarshalTypeError); ok {
+			problems = validator.Evaluator{
+				jsonErr.Field: fmt.Sprintf("expected %s, got %s", jsonErr.Type, jsonErr.Value),
+			}
+		} else if strings.Contains(err.Error(), "cannot unmarshal") {
+			// Try to extract field name from error message
+			problems = validator.Evaluator{
+				"json": "invalid JSON format - check field types (numbers should not be quoted)",
+			}
+		} else {
+			problems = validator.Evaluator{
+				"json": "invalid JSON format",
+			}
+		}
+
+		return data, problems, fmt.Errorf("failed to decode JSON request body: %w", err)
 	}
 
 	if problems := data.Valid(r.Context()); len(problems) > 0 {
