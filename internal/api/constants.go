@@ -1,5 +1,5 @@
 package api
 
 const (
-	AuthenticatedUserID = "authenticatedUserId"
+	AuthenticatedUserID = "authenticatedUserID"
 )

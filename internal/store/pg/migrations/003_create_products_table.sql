@@ -1,6 +1,6 @@
 -- Write your migrate up statements here
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   seller_id UUID NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,

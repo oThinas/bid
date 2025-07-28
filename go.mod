@@ -10,6 +10,8 @@ require (
 	golang.org/x/crypto v0.37.0
 )
 
+require github.com/gorilla/websocket v1.5.3
+
 require (
 	github.com/alexedwards/scs/pgxstore v0.0.0-20250417082927-ab20b3feb5e9
 	github.com/alexedwards/scs/v2 v2.9.0

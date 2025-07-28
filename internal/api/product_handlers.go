@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/oThinas/bid/internal/services"
 	"github.com/oThinas/bid/internal/usecase/products"
 	"github.com/oThinas/bid/internal/utils"
 )
@@ -16,7 +18,6 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID, ok := api.Sessions.Get(r.Context(), AuthenticatedUserID).(uuid.UUID)
-
 	if !ok {
 		utils.EncodeJSON(w, r, http.StatusInternalServerError, map[string]string{
 			"error": "unexpected internal server error",
@@ -24,7 +25,7 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := api.ProductService.CreateProduct(
+	productID, err := api.ProductService.CreateProduct(
 		r.Context(),
 		userID,
 		data.Name,
@@ -39,7 +40,16 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.EncodeJSON(w, r, http.StatusOK, map[string]uuid.UUID{
-		"data": id,
+	ctx, _ := context.WithDeadline(context.Background(), data.AuctionEnd)
+	auctionRoom := services.NewAuctionRoom(ctx, productID, api.BidsService)
+
+	go auctionRoom.Run()
+	api.AuctionLobby.Lock()
+	api.AuctionLobby.Rooms[productID] = auctionRoom
+	api.AuctionLobby.Unlock()
+
+	utils.EncodeJSON(w, r, http.StatusCreated, map[string]any{
+		"data":    productID,
+		"message": "auction room created",
 	})
 }
